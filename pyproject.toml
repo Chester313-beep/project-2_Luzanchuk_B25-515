@@ -1,0 +1,16 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "primitive_db"
+version = "0.1.0"
+description = "Primitive Database"
+authors = [{name = "Luzanchuk_B25-515"}]
+requires-python = ">=3.9"
+
+packages = [{ include = "src" },]
+
+[tool.poetry.scripts]
+project = "primitive_db.main:main"
+
