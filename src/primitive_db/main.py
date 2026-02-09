@@ -1,19 +1,23 @@
-﻿import os
+﻿#!/usr/bin/env python3
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from primitive_db.engine import run
 
-try:
-    from engine import welcome
-except ImportError:
-    try:
-        from engine import welcome
-    except ImportError:
-        print("Ошибка: не могу импортировать engine")
-        sys.exit(1)
+
 def main() -> int:
-    welcome()
-    return 0
+    """
+    Точка входа в программу.
+    Запускает основную функцию базы данных.
+    """
+    try:
+        run()
+        return 0
+    except KeyboardInterrupt:
+        print("\n\nПрограмма завершена пользователем")
+        return 130
+    except Exception as e:
+        print(f"Критическая ошибка: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
