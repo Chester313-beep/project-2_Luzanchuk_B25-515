@@ -1,8 +1,20 @@
-﻿#!/usr/bin/env python3
+﻿import os
+import sys
 
-def main():
-    print("DB project is running!")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    from engine import welcome
+except ImportError:
+    try:
+        from engine import welcome
+    except ImportError:
+        print("Ошибка: не могу импортировать engine")
+        sys.exit(1)
+def main() -> int:
+    welcome()
     return 0
 
+
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

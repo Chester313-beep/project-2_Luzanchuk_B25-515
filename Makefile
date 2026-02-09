@@ -12,3 +12,6 @@ publish:
 
 package-install:
 	powershell -c "pip install (Get-ChildItem dist\*.whl | Select -First 1)"
+
+make lint:
+	poetry run ruff check .
