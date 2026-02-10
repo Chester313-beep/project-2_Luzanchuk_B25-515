@@ -2,11 +2,11 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from engine import display_welcome, execute_command
-    from utils import load_metadata
+    from database_cli.engine import display_welcome, execute_command
+    from database_cli.utils import load_metadata
 except ImportError as e:
     print(f"Ошибка импорта: {e}")
     sys.exit(1)
@@ -17,6 +17,12 @@ def main():
     os.makedirs("data", exist_ok=True)
 
     metadata = load_metadata()
+    if metadata is None:
+        print(
+            "Предупреждение: загруженные метаданные равны None, "
+            "сбрасываю в пустой словарь"
+        )
+        metadata = {}
 
     while True:
         try:
@@ -27,7 +33,15 @@ def main():
             if not execute_command(command, metadata):
                 break
 
-            metadata = load_metadata()
+            new_metadata = load_metadata()
+            if new_metadata is not None:
+                metadata = new_metadata
+            else:
+                print(
+                    "Предупреждение: метаданные загружены как None, "
+                    "сохраняю предыдущие"
+                )
+
         except KeyboardInterrupt:
             print("\n\nПрограмма завершена.")
             break

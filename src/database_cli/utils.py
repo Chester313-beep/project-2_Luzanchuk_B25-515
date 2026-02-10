@@ -9,7 +9,10 @@ def load_metadata() -> Dict[str, Any]:
     if metadata_file.exists():
         try:
             with open(metadata_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                data = json.load(f)
+                if data is None:
+                    return {}
+                return data
         except (json.JSONDecodeError, IOError):
             return {}
 
@@ -17,6 +20,9 @@ def load_metadata() -> Dict[str, Any]:
 
 
 def save_metadata(metadata: Dict[str, Any]) -> None:
+    if metadata is None:
+        raise ValueError("Нельзя сохранять None в качестве метаданных")
+
     data_dir = Path("data")
     data_dir.mkdir(exist_ok=True)
 

@@ -16,7 +16,15 @@ try:
         select,
         update,
     )
-    from parser import CommandParser
+    from parser import (
+        parse_create,
+        parse_delete,
+        parse_drop,
+        parse_info,
+        parse_insert,
+        parse_select,
+        parse_update,
+    )
     from utils import save_metadata
 except ImportError as e:
     print(f"Ошибка импорта: {e}")
@@ -79,10 +87,12 @@ def execute_command(command: str, metadata: dict) -> bool:
         display_welcome()
         return True
     elif lower_command == "list":
-        tables = list_tables(metadata)
-        if tables:
+        result = list_tables(metadata)
+        if result is None:
+            return True
+        if result:
             print("Список таблиц:")
-            for table in tables:
+            for table in result:
                 print(f"  - {table}")
         else:
             print("Нет созданных таблиц.")
@@ -90,33 +100,55 @@ def execute_command(command: str, metadata: dict) -> bool:
 
     try:
         if lower_command.startswith("create"):
-            table_name, columns = CommandParser.parse_create(command)
-            metadata = create_table(metadata, table_name, columns)
-            save_metadata(metadata)
-            print(f"Таблица '{table_name}' успешно создана.")
+            table_name, columns = parse_create(command)
+            result = create_table(metadata, table_name, columns)
+            if result is None:
+                return True
+            try:
+                save_metadata(result)
+                print(f"Таблица '{table_name}' успешно создана.")
+            except Exception as e:
+                print(f"Ошибка при сохранении метаданных: {e}")
+                return True
+
         elif lower_command.startswith("drop"):
-            table_name = CommandParser.parse_drop(command)
-            metadata = drop_table(metadata, table_name)
-            save_metadata(metadata)
-            print(f"Таблица '{table_name}' успешно удалена.")
+            table_name = parse_drop(command)
+            result = drop_table(metadata, table_name)
+            if result is None:
+                return True
+            try:
+                save_metadata(result)
+                print(f"Таблица '{table_name}' успешно удалена.")
+            except Exception as e:
+                print(f"Ошибка при сохранении метаданных: {e}")
+                return True
+
         elif lower_command.startswith("insert"):
-            table_name, values = CommandParser.parse_insert(command)
+            table_name, values = parse_insert(command)
             result = insert(metadata, table_name, values)
+            if result is None:
+                return True
             print(
                 f"Запись с ID={result['id']} успешно добавлена "
                 f"в таблицу '{table_name}'."
             )
+
         elif lower_command.startswith("select"):
-            table_name, where_clause = CommandParser.parse_select(command)
+            table_name, where_clause = parse_select(command)
             result = select(metadata, table_name, where_clause)
+            if result is None:
+                return True
             if result["data"]:
                 display_table(result["data"])
                 print(f"Найдено записей: {result['count']}")
             else:
                 print("Записи не найдены.")
+
         elif lower_command.startswith("update"):
-            table_name, set_clause, where_clause = CommandParser.parse_update(command)
+            table_name, set_clause, where_clause = parse_update(command)
             result = update(metadata, table_name, set_clause, where_clause)
+            if result is None:
+                return True
             if result["count"] > 0:
                 ids_str = ", ".join(map(str, result["ids"]))
                 print(
@@ -125,9 +157,12 @@ def execute_command(command: str, metadata: dict) -> bool:
                 )
             else:
                 print("Нет записей, соответствующих условию.")
+
         elif lower_command.startswith("delete"):
-            table_name, where_clause = CommandParser.parse_delete(command)
+            table_name, where_clause = parse_delete(command)
             result = delete(metadata, table_name, where_clause)
+            if result is None:
+                return True
             if result["count"] > 0:
                 ids_str = ", ".join(map(str, result["ids"]))
                 print(
@@ -136,12 +171,16 @@ def execute_command(command: str, metadata: dict) -> bool:
                 )
             else:
                 print("Нет записей, соответствующих условию.")
+
         elif lower_command.startswith("info"):
-            table_name = CommandParser.parse_info(command)
-            table_info = get_table_info(metadata, table_name)
+            table_name = parse_info(command)
+            result = get_table_info(metadata, table_name)
+            if result is None:
+                return True
             print(f"Информация о таблице '{table_name}':")
-            print(f"  Столбцы: {table_info['columns']}")
-            print(f"  Количество записей: {table_info['record_count']}")
+            print(f"  Столбцы: {result['columns']}")
+            print(f"  Количество записей: {result['record_count']}")
+
         else:
             print("Неизвестная команда. Введите 'help' для справки.")
 
