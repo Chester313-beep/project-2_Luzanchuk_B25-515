@@ -1,119 +1,112 @@
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+
 class CommandParser:
+    @staticmethod
+    def parse_create(command: str) -> Tuple[str, List[str]]:
+        pattern = r'create\s+(\w+)\s*\((.*)\)'
+        match = re.match(pattern, command, re.IGNORECASE)
+
+        if not match:
+            raise ValueError("Неверный формат команды CREATE")
+
+        table_name = match.group(1)
+        columns_str = match.group(2).strip()
+        columns = [col.strip() for col in columns_str.split(',')]
+
+        return table_name, columns
+
+    @staticmethod
+    def parse_drop(command: str) -> str:
+        pattern = r'drop\s+(\w+)'
+        match = re.match(pattern, command, re.IGNORECASE)
+
+        if not match:
+            raise ValueError("Неверный формат команды DROP")
+
+        return match.group(1)
+
     @staticmethod
     def parse_insert(command: str) -> Tuple[str, List[str]]:
         pattern = r'insert\s+(\w+)\s+values\s*\((.*)\)'
         match = re.match(pattern, command, re.IGNORECASE)
+
         if not match:
             raise ValueError("Неверный формат команды INSERT")
+
         table_name = match.group(1)
-        values_str = match.group(2)
-        values = []
-        current = ""
-        in_quotes = False
-        quote_char = None
-        for char in values_str:
-            if char in ['"', "'"]:
-                if not in_quotes:
-                    in_quotes = True
-                    quote_char = char
-                elif char == quote_char:
-                    if current and current[-1] != '\\':
-                        in_quotes = False
-                current += char
-            elif char == ',' and not in_quotes:
-                values.append(current.strip())
-                current = ""
-            else:
-                current += char
-        if current:
-            values.append(current.strip())
-        cleaned = []
-        for v in values:
-            v = v.strip()
-            if (v.startswith('"') and v.endswith('"')) or \
-               (v.startswith("'") and v.endswith("'")):
-                v = v[1:-1]
-            cleaned.append(v)
-        return table_name, cleaned
+        values_str = match.group(2).strip()
+        values = [val.strip() for val in values_str.split(',')]
+
+        return table_name, values
+
     @staticmethod
-    def parse_select(command: str) -> Tuple[str, Optional[Dict[str, str]]]:
-        if 'where' in command.lower():
-            pattern = r'select\s+(\w+)\s+where\s+(.+)'
-            match = re.match(pattern, command, re.IGNORECASE)
-            if not match:
-                raise ValueError("Неверный формат команды SELECT")
-            table_name = match.group(1)
-            where_str = match.group(2)
-            if '=' in where_str:
-                col, val = where_str.split('=', 1)
-                col = col.strip()
-                val = val.strip()
-                if (val.startswith('"') and val.endswith('"')) or \
-                   (val.startswith("'") and val.endswith("'")):
-                    val = val[1:-1]
-                return table_name, {col: val}
-            else:
-                raise ValueError("Неверный формат условия WHERE. Используйте: where <столбец> = <значение>")
+    def parse_select(command: str) -> Tuple[str, Optional[Dict[str, Any]]]:
+        where_pattern = r'select\s+(\w+)\s+where\s+(.+)=(.+)'
+        match = re.match(where_pattern, command, re.IGNORECASE)
+
+        if match:
+            table_name = match.group(1).strip()
+            column = match.group(2).strip()
+            value = match.group(3).strip()
+            return table_name, {column: value}
         else:
             pattern = r'select\s+(\w+)'
             match = re.match(pattern, command, re.IGNORECASE)
+
             if not match:
                 raise ValueError("Неверный формат команды SELECT")
-            table_name = match.group(1)
-            return table_name, None
+
+            return match.group(1), None
+
     @staticmethod
-    def parse_update(command: str) -> Tuple[str, Dict[str, str], Dict[str, str]]:
-        pattern = r'update\s+(\w+)\s+(.+?)\s+where\s+(.+)'
+    def parse_update(command: str) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
+        pattern = r'update\s+(\w+)\s+set\s+(.+)\s+where\s+(.+)=(.+)'
         match = re.match(pattern, command, re.IGNORECASE)
+
         if not match:
-            raise ValueError("Неверный формат команды UPDATE")
-        table_name = match.group(1)
-        set_str = match.group(2)
-        where_str = match.group(3)
+            raise ValueError(
+                "Неверный формат условия WHERE. "
+                "Используйте: where <столбец> = <значение>"
+            )
+
+        table_name = match.group(1).strip()
+        set_clause_str = match.group(2).strip()
+        where_column = match.group(3).strip()
+        where_value = match.group(4).strip()
+
         set_clause = {}
-        if '=' in set_str:
-            col, val = set_str.split('=', 1)
-            col = col.strip()
-            val = val.strip()
-            if (val.startswith('"') and val.endswith('"')) or \
-               (val.startswith("'") and val.endswith("'")):
-                val = val[1:-1]
-            set_clause[col] = val
-        where_clause = {}
-        if '=' in where_str:
-            col, val = where_str.split('=', 1)
-            col = col.strip()
-            val = val.strip()
-            if (val.startswith('"') and val.endswith('"')) or \
-               (val.startswith("'") and val.endswith("'")):
-                val = val[1:-1]
-            where_clause[col] = val
+        set_parts = set_clause_str.split(',')
+        for part in set_parts:
+            key_value = part.split('=')
+            if len(key_value) == 2:
+                set_clause[key_value[0].strip()] = key_value[1].strip()
+
+        where_clause = {where_column: where_value}
+
         return table_name, set_clause, where_clause
+
     @staticmethod
-    def parse_delete(command: str) -> Tuple[str, Dict[str, str]]:
-        """Парсит команду DELETE"""
-        pattern = r'delete\s+(\w+)\s+where\s+(.+)'
+    def parse_delete(command: str) -> Tuple[str, Dict[str, Any]]:
+        pattern = r'delete\s+(\w+)\s+where\s+(.+)=(.+)'
         match = re.match(pattern, command, re.IGNORECASE)
+
         if not match:
             raise ValueError("Неверный формат команды DELETE")
-        table_name = match.group(1)
-        where_str = match.group(2)
-        where_clause = {}
-        if '=' in where_str:
-            col, val = where_str.split('=', 1)
-            col = col.strip()
-            val = val.strip()
-            if (val.startswith('"') and val.endswith('"')) or \
-               (val.startswith("'") and val.endswith("'")):
-                val = val[1:-1]
-            where_clause[col] = val
-        return table_name, where_clause
+
+        table_name = match.group(1).strip()
+        column = match.group(2).strip()
+        value = match.group(3).strip()
+
+        return table_name, {column: value}
+
     @staticmethod
     def parse_info(command: str) -> str:
         pattern = r'info\s+(\w+)'
         match = re.match(pattern, command, re.IGNORECASE)
+
         if not match:
             raise ValueError("Неверный формат команды INFO")
+
         return match.group(1)

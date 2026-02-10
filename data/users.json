@@ -16,5 +16,11 @@
     "name": "Мария",
     "age": 30,
     "active": false
+  },
+  {
+    "ID": 4,
+    "name": "Фнатик",
+    "age": 178,
+    "active": true
   }
 ]
