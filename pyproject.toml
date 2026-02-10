@@ -1,24 +1,25 @@
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[project]
-name = "primitive_db"
-version = "0.1.3"
-description = "Primitive Database"
+[tool.poetry]
+name = "database-cli"
+version = "0.2.0"
+description = "Простая реляционная база данных с CLI интерфейсом"
+authors = ["Luzanchuk_B25-515"]
 readme = "README.md"
 license = "MIT"
-authors = [{name = "Luzanchuk_B25-515"}]
-requires-python = ">=3.9"
 keywords = ["database", "cli", "sql", "relational"]
 
-packages = [{ include = "src" },]
+packages = [{ include = "database_cli", from = "src" }]
 
-[tool.poetry.scripts]
-database = "primitive_db.main:main"
 
 [tool.poetry.dependencies]
+python = "^3.10"
+prettytable = "^3.17.0"
 prompt = "^0.4.1"
+
+[tool.poetry.scripts]
+database = "database_cli.main:main"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.15.0"
 
 [tool.ruff]
 line-length = 88
@@ -29,7 +30,6 @@ exclude = ["venv", ".venv", "dist", "__pycache__"]
 select = ["E", "F", "I"]
 ignore = []
 
-[dependency-groups]
-dev = [
-    "ruff (>=0.15.0,<0.16.0)"
-]
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

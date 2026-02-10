@@ -1,0 +1,11 @@
+{
+  "users": {
+    "columns": {
+      "ID": "int",
+      "name": "str",
+      "age": "int",
+      "active": "bool"
+    },
+    "primary_key": "ID"
+  }
+}
