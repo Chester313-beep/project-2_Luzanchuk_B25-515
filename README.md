@@ -12,7 +12,7 @@ pip install database_cli
 ### Установка из исходного кода
 ```bash
 git clone git@github.com:Chester313-beep/project-2_Luzanchuk_B25-515.git
-cd database_cli
+cd project-2_Luzanchuk_B25-515
 poetry install
 ```
 
